@@ -10,13 +10,15 @@ a simple markdown-to-web-presentation tool
 
 1. write a presentation in markdown, separating slides with `---`:
 
-    # hello
+```
+# hello
 
-    ---
+---
 
-    ![](some/image.jpg)
+![](some/image.jpg)
 
-    this is my presentation
+this is my presentation
+```
 
 2. compile:
 
