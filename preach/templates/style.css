@@ -12,12 +12,19 @@ a, a:visited {
     color: #8765FB;
 }
 .slide {
-    max-width: 960px;
-    margin: 0 auto;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    padding: 2em;
+}
+.slide:first-child {
+    display: block;
 }
 
-/* Vertically center */
-.slide-inner {
+.vcenter {
     position: relative;
     top: 50%;
     transform: translateY(-50%);
@@ -41,4 +48,38 @@ pre {
 iframe {
     display: block;
     margin: 0 auto;
+}
+
+.background {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center center;
+}
+
+.background-caption {
+    position: absolute;
+    bottom: 1em;
+    color: #000;
+    background: #fff;
+}
+
+figcaption {
+    text-align: center;
+    color: rgba(0,0,0,0.5);
+    font-size: 0.6em;
+}
+
+.has-text::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
 }

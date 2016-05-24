@@ -12,19 +12,25 @@
     <script type="text/javascript">
         var nodes = document.getElementById('note').childNodes,
             out = document.getElementById('presentation'),
-            els = [[]];
+            els = [[]],
+            curr_slide = window.location.hash ? parseInt(window.location.hash.substr(1)) : 0;
+
+        // setup backgrounds
+        var backgrounds = document.getElementsByClassName('background');
+        for (var i=0; i < backgrounds.length; i++) {
+            if (backgrounds[i].src !== undefined) {
+                backgrounds[i].style.backgroundImage = 'url(' + backgrounds[i].src + ')';
+                backgrounds[i].src = '';
+            }
+        }
 
         function build_slide(elms) {
-            var slide = document.createElement('div'),
-                inner = document.createElement('div');
-
+            var slide = document.createElement('div');
             slide.className = 'slide';
-            inner.className = 'slide-inner';
 
             for(var j=0; j<elms.length; j++) {
-                inner.appendChild(elms[j]);
+                slide.appendChild(elms[j]);
             }
-            slide.appendChild(inner);
             out.appendChild(slide);
         }
 
@@ -40,7 +46,6 @@
                     slides[i].style.mozTransform    = transform;
                     slides[i].style.transform       = transform;
                 }
-                slides[i].style.height = win_height + "px";
             }
         }
         window.onresize = resize_slides();
@@ -59,32 +64,33 @@
         document.getElementById('note').style.display = 'none';
         resize_slides();
 
+        var slides = document.getElementsByClassName('slide');
+
+        function show_slide(i) {
+            for (var j=0; j<slides.length; j++) {
+                slides[j].style.display = 'none';
+            }
+            slides[i].style.display = 'block';
+            window.location.hash = i;
+        }
+        show_slide(curr_slide);
+
         // Key navigation.
         document.onkeydown = function(e) {
-            var slides = document.getElementsByClassName('slide'),
-                curr_slide;
-            for (var i=0; i<slides.length; i++) {
-                var y   = window.pageYOffset,
-                    wh  = window.outerHeight,
-                    h   = slides[i].offsetHeight,
-                    top = slides[i].offsetTop;
-                if (top + h >= y + wh/2 && top + h <= y + wh ||
-                    top <= y + wh/2 && top > y) {
-                    curr_slide = i;
-                    break;
-                }
-            }
-
             e = e || window.event;
             switch(e.which || e.keyCode) {
                 case 40: // down
-                    if (i < slides.length - 1)
-                        window.scrollTo(0, slides[i+1].offsetTop);
+                    if (curr_slide < slides.length - 1) {
+                        curr_slide += 1;
+                        show_slide(curr_slide);
+                    }
                     e.preventDefault();
                     break;
                 case 38: // up
-                    if (i > 0)
-                        window.scrollTo(0, slides[i-1].offsetTop);
+                    if (curr_slide > 0) {
+                        curr_slide -= 1;
+                        show_slide(curr_slide);
+                    }
                     e.preventDefault();
                     break;
             }

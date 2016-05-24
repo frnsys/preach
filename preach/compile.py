@@ -70,6 +70,7 @@ def compile_markdown(md):
         GFM(),
         NomadicMD(),
         'markdown.extensions.footnotes',
+        'markdown.extensions.attr_list',
         MathJaxExtension(),
         FigureCaptionExtension()
     ], lazy_ol=False)
