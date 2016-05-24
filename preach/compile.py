@@ -55,10 +55,10 @@ def compile_note(note, outdir, stylesheet=None, templ='default'):
 
     # render the presentation
     html = compile_markdown(content)
-    content = templ.render(html=html)
+    content = templ.render(html=html, title=note.title)
 
     # save it
-    with open(os.path.join(outdir, note.title) + '.html', 'w') as out:
+    with open(os.path.join(outdir, 'index.html'), 'w') as out:
         out.write(content)
 
 
