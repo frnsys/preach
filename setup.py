@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='preach',
-    version='0.0.2',
+    version='0.0.3',
     description='simple presentation builder',
     url='https://github.com/frnsys/preach',
     author='Francis Tseng',
