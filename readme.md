@@ -8,7 +8,7 @@ a simple markdown-to-web-presentation tool
 
 ### use
 
-\1. write a presentation in markdown, separating slides with `---`:
+1\. write a presentation in markdown, separating slides with `---`:
 
 ```
 # hello
@@ -20,7 +20,7 @@ a simple markdown-to-web-presentation tool
 this is my presentation
 ```
 
-\2. compile:
+2\. compile:
 
 ```
 preach compile my_presentation.md
