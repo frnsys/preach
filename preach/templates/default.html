@@ -32,23 +32,36 @@
                 slide.appendChild(elms[j]);
             }
             out.appendChild(slide);
+            return slide;
         }
 
-        function resize_slides() {
+        function scale_slides() {
             var slides = document.getElementsByClassName('slide'),
                 win_height = window.innerHeight;
             for (var i=0; i<slides.length; i++) {
-                var slide_height = slides[i].clientHeight;
+                var slide = slides[i],
+                    slide_height = slide.scrollHeight;
                 if (slide_height > win_height) {
                     var scale = win_height/slide_height,
                         transform = 'scale(' + scale + ')';
-                    slides[i].style.webkitTransform = transform;
-                    slides[i].style.mozTransform    = transform;
-                    slides[i].style.transform       = transform;
+                    slide.style.transform       = transform;
+                    slide.style.transformOrigin = '0 0';
+
+                    // lock-in the width of scaled images
+                    // if we don't, the image could scale up when we change the slide width (below)
+                    var imgs = slide.getElementsByTagName('img');
+                    for (var j=0; j<imgs.length; j++) {
+                        var computedWidth = window.getComputedStyle(imgs[j], null).getPropertyValue('width');
+                        imgs[j].style.width = computedWidth;
+                    }
+
+                    // manually set the slide width so we can use the full window width (not just the scaled slide width)
+                    var paddingLeft = parseInt(window.getComputedStyle(slide, null).getPropertyValue('padding-left')),
+                        paddingRight = parseInt(window.getComputedStyle(slide, null).getPropertyValue('padding-right'));
+                    slide.style.width = ((window.innerWidth - paddingLeft - paddingRight) * (1/scale)).toString() + 'px';
                 }
             }
         }
-        window.onresize = resize_slides();
 
         // Build slides out of the note html, interpreting `hr` as a slide break.
         for (var i=0; i<nodes.length; i++) {
@@ -59,20 +72,21 @@
             }
         }
         for (var i=0; i<els.length; i++) {
-            build_slide(els[i]);
+            var slide = build_slide(els[i]);
+            slide.id = 'slide' + i;
         }
         document.getElementById('note').style.display = 'none';
-        resize_slides();
 
         var slides = document.getElementsByClassName('slide');
 
         function show_slide(i) {
             for (var j=0; j<slides.length; j++) {
-                slides[j].style.display = 'none';
+                slides[j].style.visibility = 'hidden';
             }
-            slides[i].style.display = 'block';
+            slides[i].style.visibility = 'visible';
             window.location.hash = i;
         }
+        window.onload = scale_slides;
         show_slide(curr_slide);
 
         // Key navigation.
