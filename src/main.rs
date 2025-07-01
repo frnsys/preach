@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use bpaf::Bpaf;
 use maud::{DOCTYPE, Markup, PreEscaped, html};
+use notify_debouncer_mini::notify::RecursiveMode;
+use notify_debouncer_mini::{DebounceEventResult, new_debouncer};
 use serde::{Deserialize, Serialize};
 
 // TODO: Maybe `Slide` itself should be the enum
@@ -114,6 +117,18 @@ fn prepare_output_dir() -> (PathBuf, PathBuf) {
     (outdir, assets)
 }
 
+fn compile_slides(path: &Path) {
+    let data = fs_err::read_to_string(path).expect("unable to read file");
+    let mut slides: Vec<Slide> = serde_yaml::from_str(&data).unwrap();
+
+    let (outdir, assets) = prepare_output_dir();
+    consolidate_assets(&mut slides, &assets);
+
+    let file = outdir.join("index.html");
+    let html = render_slides(&slides);
+    fs_err::write(file, html.into_string()).expect("unable to write file");
+}
+
 #[derive(Clone, Debug, Bpaf)]
 #[bpaf(options, version)]
 /// Create an HTML slideshow.
@@ -121,22 +136,31 @@ struct Args {
     /// Slides YAML definition to compile.
     #[bpaf(positional("PATH"))]
     path: PathBuf,
+
+    #[bpaf(short, long)]
+    watch: bool,
 }
 
 fn main() {
     let opts = args().run();
-    println!("Reading slides from {:?}", opts.path);
-    let data = fs_err::read_to_string(opts.path).expect("unable to read file");
-    let mut slides: Vec<Slide> = serde_yaml::from_str(&data).unwrap();
+    if opts.watch {
+        println!("Watching {:?}", opts.path);
 
-    let (outdir, assets) = prepare_output_dir();
-    println!("Slides will be written to {outdir:?}");
-
-    println!("Consolidating assets...");
-    consolidate_assets(&mut slides, &assets);
-
-    let file = outdir.join("index.html");
-    let html = render_slides(&slides);
-    fs_err::write(file, html.into_string()).expect("unable to write file");
-    println!("Finished.");
+        let path = opts.path.clone();
+        let mut debouncer = new_debouncer(
+            Duration::from_secs(1),
+            move |res: DebounceEventResult| match res {
+                Ok(_) => compile_slides(&path),
+                Err(e) => println!("Error {:?}", e),
+            },
+        )
+        .unwrap();
+        debouncer
+            .watcher()
+            .watch(&opts.path, RecursiveMode::Recursive)
+            .unwrap();
+        loop {}
+    } else {
+        compile_slides(&opts.path);
+    }
 }
