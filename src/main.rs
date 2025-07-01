@@ -4,28 +4,39 @@ use std::time::Duration;
 
 use bpaf::Bpaf;
 use maud::{DOCTYPE, Markup, PreEscaped, html};
+use notify_debouncer_full::notify::EventKind;
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
 use serde::{Deserialize, Serialize};
 
-// TODO: Maybe `Slide` itself should be the enum
-// with each variant representing a different layout?
 #[derive(Debug, Serialize, Deserialize)]
 struct Slide {
     #[serde(default)]
-    text: Option<String>,
+    title: Option<String>,
+
+    #[serde(default)]
+    body: Option<String>,
 
     #[serde(default)]
     notes: Option<String>,
 
     #[serde(default)]
     media: Option<PathBuf>,
+
+    #[serde(default)]
+    layout: Option<Layout>,
 }
 impl Slide {
     fn render(&self) -> Markup {
-        let text = render(&self.text, |text| {
+        let text = render(&self.body, |text| {
             let md = markdown::to_html(text);
             html! { (PreEscaped(md)) }
         });
+
+        let title = render(&self.title, |text| {
+            let md = markdown::to_html(text);
+            html! { h1 { (PreEscaped(md)) } }
+        });
+
         let media = render(&self.media, |path| {
             let path = path.display().to_string();
             html! {
@@ -33,17 +44,16 @@ impl Slide {
             }
         });
         html! {
-            (text)
-            (media)
+            div {
+                (title)
+                (media)
+                (text)
+            }
         }
     }
 
     fn layout(&self) -> Layout {
-        if self.media.is_some() {
-            Layout::Centered
-        } else {
-            Layout::Simple
-        }
+        self.layout.unwrap_or(Layout::Centered)
     }
 
     fn class(&self) -> &'static str {
@@ -55,14 +65,14 @@ impl Slide {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 enum Layout {
-    Simple,
+    #[default]
     Centered,
 }
 impl Layout {
     fn as_str(&self) -> &'static str {
         match self {
-            Layout::Simple => "simple",
             Layout::Centered => "centered",
         }
     }
@@ -79,7 +89,7 @@ fn render_slides(slides: &[Slide]) -> Markup {
     html! {
         (DOCTYPE)
         head {
-            style { (STYLE) }
+            style { (PreEscaped(STYLE)) }
         }
         body {
             @for (i, slide) in slides.iter().enumerate() {
@@ -117,7 +127,7 @@ fn prepare_output_dir() -> io::Result<(PathBuf, PathBuf)> {
     Ok((outdir, assets))
 }
 
-fn compile_slides(path: &Path) -> io::Result<()> {
+fn compile_slides_impl(path: &Path) -> io::Result<()> {
     let data = fs_err::read_to_string(path).expect("unable to read file");
     let mut slides: Vec<Slide> = serde_yaml::from_str(&data)
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
@@ -129,6 +139,13 @@ fn compile_slides(path: &Path) -> io::Result<()> {
     let html = render_slides(&slides);
     fs_err::write(file, html.into_string()).expect("unable to write file");
     Ok(())
+}
+
+fn compile_slides(path: &Path) {
+    match compile_slides_impl(path) {
+        Ok(_) => println!("Slides compiled successfully."),
+        Err(err) => println!("Error compiling slides:\n  {err}"),
+    }
 }
 
 #[derive(Clone, Debug, Bpaf)]
@@ -149,26 +166,28 @@ fn main() {
         println!("Watching {:?}", opts.path);
 
         let path = opts.path.clone();
+        compile_slides(&path);
         let mut debouncer = new_debouncer(
             Duration::from_millis(500),
             None,
             move |res: DebounceEventResult| match res {
-                Ok(_) => match compile_slides(&path) {
-                    Ok(_) => println!("Slides compiled successfully."),
-                    Err(err) => println!("Error compiling slides:\n  {err}"),
-                },
+                Ok(events) => {
+                    if let Some(_) = events.iter().find(|ev| {
+                        !matches!(ev.kind, EventKind::Access(_))
+                            && ev.paths.iter().any(|p| p.ends_with(&path))
+                    }) {
+                        compile_slides(&path);
+                    }
+                }
                 Err(e) => println!("Error {:?}", e),
             },
         )
         .unwrap();
         debouncer
-            .watch(&opts.path, RecursiveMode::Recursive)
+            .watch(&opts.path.parent().unwrap(), RecursiveMode::Recursive)
             .unwrap();
         loop {}
     } else {
-        match compile_slides(&opts.path) {
-            Ok(_) => println!("Slides compiled successfully."),
-            Err(err) => println!("Error compiling slides:\n  {err}"),
-        }
+        compile_slides(&opts.path);
     }
 }

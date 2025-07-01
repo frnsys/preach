@@ -11,7 +11,8 @@ const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       history.replaceState(null, '', `#${entry.target.id}`);
-      console.log(`#${entry.target.id}: ${entry.target.dataset.notes}`);
+      console.clear();
+      console.log(`%c#${entry.target.id}: ${entry.target.dataset.notes}`, "font-family: 'Inter', system-ui; font-size: 20px");
     }
   });
 }, {
