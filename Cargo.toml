@@ -1,0 +1,12 @@
+[package]
+name = "preach"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+maud = "0.27.0"
+fs-err = "3.1.1"
+markdown = "1.0.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_yaml = "0.9.34"
+bpaf = { version = "0.9.20", features = ["derive"] }

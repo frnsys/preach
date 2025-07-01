@@ -1,0 +1,41 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: #fff;
+  background: #161616;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+html::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari */
+}
+
+.slide {
+  width: 100vw;
+  height: 100vh;
+  scroll-snap-align: start;
+}
+
+.slide.simple {
+  padding: 1em 1.5em;
+}
+
+.slide.centered {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+img {
+  max-width: 100%;
+  max-height: 100vh;
+}
