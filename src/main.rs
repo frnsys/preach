@@ -1,10 +1,10 @@
+use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use bpaf::Bpaf;
 use maud::{DOCTYPE, Markup, PreEscaped, html};
-use notify_debouncer_mini::notify::RecursiveMode;
-use notify_debouncer_mini::{DebounceEventResult, new_debouncer};
+use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
 use serde::{Deserialize, Serialize};
 
 // TODO: Maybe `Slide` itself should be the enum
@@ -104,29 +104,31 @@ fn consolidate_assets(slides: &mut Vec<Slide>, asset_dir: &Path) {
     }
 }
 
-fn prepare_output_dir() -> (PathBuf, PathBuf) {
+fn prepare_output_dir() -> io::Result<(PathBuf, PathBuf)> {
     let outdir = PathBuf::from("slides");
     if outdir.exists() {
-        fs_err::remove_dir_all(&outdir).expect("couldn't clean output dir");
+        fs_err::remove_dir_all(&outdir)?;
     }
-    fs_err::create_dir_all(&outdir).expect("couldn't create output dir");
+    fs_err::create_dir_all(&outdir)?;
 
     let assets = outdir.join("assets");
-    fs_err::create_dir_all(&assets).expect("couldn't create assets dir");
+    fs_err::create_dir_all(&assets)?;
 
-    (outdir, assets)
+    Ok((outdir, assets))
 }
 
-fn compile_slides(path: &Path) {
+fn compile_slides(path: &Path) -> io::Result<()> {
     let data = fs_err::read_to_string(path).expect("unable to read file");
-    let mut slides: Vec<Slide> = serde_yaml::from_str(&data).unwrap();
+    let mut slides: Vec<Slide> = serde_yaml::from_str(&data)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
 
-    let (outdir, assets) = prepare_output_dir();
+    let (outdir, assets) = prepare_output_dir()?;
     consolidate_assets(&mut slides, &assets);
 
     let file = outdir.join("index.html");
     let html = render_slides(&slides);
     fs_err::write(file, html.into_string()).expect("unable to write file");
+    Ok(())
 }
 
 #[derive(Clone, Debug, Bpaf)]
@@ -148,19 +150,25 @@ fn main() {
 
         let path = opts.path.clone();
         let mut debouncer = new_debouncer(
-            Duration::from_secs(1),
+            Duration::from_millis(500),
+            None,
             move |res: DebounceEventResult| match res {
-                Ok(_) => compile_slides(&path),
+                Ok(_) => match compile_slides(&path) {
+                    Ok(_) => println!("Slides compiled successfully."),
+                    Err(err) => println!("Error compiling slides:\n  {err}"),
+                },
                 Err(e) => println!("Error {:?}", e),
             },
         )
         .unwrap();
         debouncer
-            .watcher()
             .watch(&opts.path, RecursiveMode::Recursive)
             .unwrap();
         loop {}
     } else {
-        compile_slides(&opts.path);
+        match compile_slides(&opts.path) {
+            Ok(_) => println!("Slides compiled successfully."),
+            Err(err) => println!("Error compiling slides:\n  {err}"),
+        }
     }
 }
