@@ -259,7 +259,7 @@ checksum = "5e0826a989adedc2a244799e823aece04662b66609d96af8dff7ac6df9a8925d"
 
 [[package]]
 name = "preach"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "bpaf",
  "fs-err",

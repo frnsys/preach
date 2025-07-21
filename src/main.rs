@@ -89,6 +89,7 @@ fn render_slides(slides: &[Slide]) -> Markup {
     html! {
         (DOCTYPE)
         head {
+            title { "preach" }
             style { (PreEscaped(STYLE)) }
         }
         body {
@@ -103,15 +104,16 @@ fn render_slides(slides: &[Slide]) -> Markup {
 
 /// Copy referenced media files to the output assets directory,
 /// and update paths accordingly.
-fn consolidate_assets(slides: &mut Vec<Slide>, asset_dir: &Path) {
+fn consolidate_assets(slides: &mut Vec<Slide>, asset_dir: &Path) -> io::Result<()> {
     for slide in slides {
         if let Some(media) = &slide.media {
             let name = media.file_name().unwrap();
             let dest = asset_dir.join(name);
-            fs_err::copy(media, dest).expect("unable to copy media file");
+            fs_err::copy(media, dest)?;
             slide.media = Some(PathBuf::from("assets").join(name));
         }
     }
+    Ok(())
 }
 
 fn prepare_output_dir() -> io::Result<(PathBuf, PathBuf)> {
@@ -133,7 +135,7 @@ fn compile_slides_impl(path: &Path) -> io::Result<()> {
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
 
     let (outdir, assets) = prepare_output_dir()?;
-    consolidate_assets(&mut slides, &assets);
+    consolidate_assets(&mut slides, &assets)?;
 
     let file = outdir.join("index.html");
     let html = render_slides(&slides);
