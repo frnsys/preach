@@ -39,8 +39,22 @@ impl Slide {
 
         let media = render(&self.media, |path| {
             let path = path.display().to_string();
-            html! {
-                img src=(path);
+            match path.rsplit_once(".") {
+                Some((_, ext)) => match ext {
+                    "mp4" => {
+                        html! {
+                            video src=(path) autoplay[true] loop[true] muted[true];
+                        }
+                    }
+                    _ => {
+                        html! {
+                            img src=(path);
+                        }
+                    }
+                },
+                None => html! {
+                    img src=(path);
+                },
             }
         });
         html! {
