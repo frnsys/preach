@@ -29,7 +29,11 @@ impl Slide {
     fn render(&self) -> Markup {
         let text = render(&self.body, |text| {
             let md = markdown::to_html(text);
-            html! { (PreEscaped(md)) }
+            if self.media.is_some() {
+                html! { div.caption { (PreEscaped(md)) } }
+            } else {
+                html! { (PreEscaped(md)) }
+            }
         });
 
         let title = render(&self.title, |text| {
@@ -43,7 +47,7 @@ impl Slide {
                 Some((_, ext)) => match ext {
                     "mp4" => {
                         html! {
-                            video src=(path) autoplay[true] loop[true] muted[true];
+                            video src=(path) autoplay[true] loop[true] muted[true] {}
                         }
                     }
                     _ => {

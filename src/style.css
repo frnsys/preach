@@ -24,6 +24,7 @@ html::-webkit-scrollbar {
   width: 100vw;
   height: 100vh;
   scroll-snap-align: start;
+  position: relative;
 }
 
 .slide.centered {
@@ -40,4 +41,19 @@ img, video {
 
 h1 {
   font-family: "Inter", system-ui, sans-serif;
+}
+
+.caption {
+  position: absolute;
+  right: 1em;
+  bottom: 1em;
+  font-size: 16px;
+  background: black;
+  padding: 0.2em 0.75em;
+  font-family: "Inter", system-ui, sans-serif;
+  font-style: italic;
+  font-weight: bold;
+}
+.caption p {
+  margin: 0;
 }
