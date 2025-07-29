@@ -61,11 +61,25 @@ impl Slide {
                 },
             }
         });
+
+        let notes = render(&self.notes, |text| {
+            // Hack for line breaks;
+            // see <https://github.com/wooorm/markdown-rs/issues/67>
+            let text = text
+                .lines()
+                .map(str::trim_end)
+                .collect::<Vec<_>>()
+                .join("  \n\n");
+            let md = markdown::to_html(&text);
+            html! { div.notes { (PreEscaped(md)) } }
+        });
+
         html! {
             div {
                 (title)
                 (media)
                 (text)
+                (notes)
             }
         }
     }
@@ -109,6 +123,8 @@ fn render_slides(slides: &[Slide]) -> Markup {
         head {
             title { "preach" }
             style { (PreEscaped(STYLE)) }
+            meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1";
+            meta charset="UTF-8";
         }
         body {
             @for (i, slide) in slides.iter().enumerate() {

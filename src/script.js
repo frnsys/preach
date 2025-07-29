@@ -1,3 +1,11 @@
+const url = new URL(window.location.href);
+const params = new URLSearchParams(url.search);
+if (params.has("notes")) {
+  document.querySelectorAll('.notes').forEach(notes => {
+    notes.style.display = "block";
+  });
+}
+
 window.addEventListener('keydown', (e) => {
   if (['ArrowDown', 'ArrowUp'].includes(e.key)) {
     e.preventDefault(); // Stop default smooth scroll
