@@ -208,10 +208,11 @@ fn main() {
             None,
             move |res: DebounceEventResult| match res {
                 Ok(events) => {
-                    if let Some(_) = events.iter().find(|ev| {
+                    let should_compile = events.iter().any(|ev| {
                         !matches!(ev.kind, EventKind::Access(_))
                             && ev.paths.iter().any(|p| p.ends_with(&path))
-                    }) {
+                    });
+                    if should_compile {
                         compile_slides(&path);
                     }
                 }
@@ -220,9 +221,11 @@ fn main() {
         )
         .unwrap();
         debouncer
-            .watch(&opts.path.parent().unwrap(), RecursiveMode::Recursive)
+            .watch(opts.path.parent().unwrap(), RecursiveMode::Recursive)
             .unwrap();
-        loop {}
+        loop {
+            std::thread::sleep(Duration::from_millis(500));
+        }
     } else {
         compile_slides(&opts.path);
     }
